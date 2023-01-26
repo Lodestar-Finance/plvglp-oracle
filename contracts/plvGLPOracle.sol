@@ -8,6 +8,7 @@ import "./Interfaces/ERC20Interface.sol";
 
 //TODO: implement moving average similar to Uniswap v2?
 //TODO: finish documentation
+//TODO: optimize integer sizes for gas efficiency?
 
 /** @title Oracle for Plutus Vault GLP employing TWAP calculations for pricing
     @author Lodestar Finance & Plutus DAO
