@@ -90,7 +90,7 @@ contract plvGLPOracle is Ownable {
 
     function checkSwing(uint256 currentIndex) internal returns (bool) {
         uint256 previousIndex = getPreviousIndex();
-        uint256 allowableSwing = previousIndex * MAX_SWING;
+        uint256 allowableSwing = (previousIndex * MAX_SWING) / BASE;
         uint256 minSwing = previousIndex - allowableSwing;
         uint256 maxSwing = previousIndex + allowableSwing;
         if (currentIndex > maxSwing || currentIndex < minSwing) {
