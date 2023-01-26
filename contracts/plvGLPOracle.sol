@@ -103,13 +103,15 @@ contract plvGLPOracle is Ownable {
     function updateIndex() public onlyOwner {
         uint256 currentIndex = getPlutusExchangeRate();
         bool indexCheck = checkSwing(currentIndex);
-        //only update index if new index is within +/- 1% and update threshold has been reached
-        if (indexCheck && currentIndex - lastIndex > updateThreshold) {
+        //we only ever update the index if requested update is within +/- 1% of previously accepted
+        //index and update threshold has been reached. Revert otherwise.
+        if (!indexCheck) {
+            revert("requested update is out of bounds");
+        } else if (indexCheck && currentIndex - lastIndex > updateThreshold) {
             cumulativeIndex = cumulativeIndex + currentIndex;
             HistoricalIndices.push(IndexInfo(block.timestamp, currentIndex));
             averageIndex = computeAverageIndex();
         }
-        //if updating parameters not met we do nothing
     }
 
     function getPlvGLPPrice() external view returns (uint256) {
