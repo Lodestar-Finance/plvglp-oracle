@@ -16,7 +16,6 @@ import "./Interfaces/ERC20Interface.sol";
     but reported prices are less fresh over time.
 */
 contract plvGLPOracle is Ownable {
-    uint256 lastIndex;
     uint256 averageIndex;
     uint256 cumulativeIndex;
     uint256 updateThreshold;
@@ -115,6 +114,7 @@ contract plvGLPOracle is Ownable {
      */
     function updateIndex() public onlyOwner {
         uint256 currentIndex = getPlutusExchangeRate();
+        uint256 lastIndex = getPreviousIndex();
         bool indexCheck = checkSwing(currentIndex);
         if (!indexCheck) {
             revert("requested update is out of bounds");
