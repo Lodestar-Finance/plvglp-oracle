@@ -1,5 +1,4 @@
 //SPDX-License-Identifier: BSD-3-Clause
-//Authors: Lodestar Finance and Plutus DAO
 pragma solidity 0.8.17;
 
 import "../node_modules/@openzeppelin/contracts/access/Ownable.sol";
