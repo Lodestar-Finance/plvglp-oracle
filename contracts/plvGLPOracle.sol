@@ -1,4 +1,5 @@
 //SPDX-License-Identifier: BSD-3-Clause
+//Authors: Lodestar Finance and Plutus DAO
 pragma solidity 0.8.17;
 
 import "../node_modules/@openzeppelin/contracts/access/Ownable.sol";
@@ -7,6 +8,8 @@ import "./Interfaces/plvGLPInterface.sol";
 import "./Interfaces/ERC20Interface.sol";
 
 contract plvGLPOracle is Ownable {
+    //TODO: implement moving average similar to Uniswap v2?
+
     uint256 lastIndex;
     uint256 averageIndex;
     uint256 cumulativeIndex;
