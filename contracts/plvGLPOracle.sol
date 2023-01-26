@@ -7,9 +7,15 @@ import "./Interfaces/GLPManagerInterface.sol";
 import "./Interfaces/plvGLPInterface.sol";
 import "./Interfaces/ERC20Interface.sol";
 
-contract plvGLPOracle is Ownable {
-    //TODO: implement moving average similar to Uniswap v2?
+//TODO: implement moving average similar to Uniswap v2?
+//TODO: finish documentation
 
+/** @title Oracle for Plutus Vault GLP employing TWAP calculations for pricing
+    @author Lodestar Finance & Plutus DAO
+    @notice This contract uses a simple cumulative TWAP function. It is more resistant to manipulation
+    but reported prices are less fresh over time.
+*/
+contract plvGLPOracle is Ownable {
     uint256 lastIndex;
     uint256 averageIndex;
     uint256 cumulativeIndex;
@@ -100,11 +106,16 @@ contract plvGLPOracle is Ownable {
         return true;
     }
 
+    /**
+        @notice Update the current, cumulative and average indices when required conditions are met
+        @dev we only ever update the index if requested update is within +/- 1% of previously accepted
+        index and update threshold has been reached. Revert otherwise.
+        @notice If the price fails to update, the posted price will fall back on the last previously 
+        accepted average index.
+     */
     function updateIndex() public onlyOwner {
         uint256 currentIndex = getPlutusExchangeRate();
         bool indexCheck = checkSwing(currentIndex);
-        //we only ever update the index if requested update is within +/- 1% of previously accepted
-        //index and update threshold has been reached. Revert otherwise.
         if (!indexCheck) {
             revert("requested update is out of bounds");
         } else if (indexCheck && currentIndex - lastIndex > updateThreshold) {
