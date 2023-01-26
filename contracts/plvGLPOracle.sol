@@ -114,11 +114,13 @@ contract plvGLPOracle is Ownable {
      */
     function updateIndex() public onlyOwner {
         uint256 currentIndex = getPlutusExchangeRate();
-        uint256 lastIndex = getPreviousIndex();
+        uint256 previousIndex = getPreviousIndex();
         bool indexCheck = checkSwing(currentIndex);
         if (!indexCheck) {
             revert("requested update is out of bounds");
-        } else if (indexCheck && currentIndex - lastIndex > updateThreshold) {
+        } else if (
+            indexCheck && currentIndex - previousIndex > updateThreshold
+        ) {
             cumulativeIndex = cumulativeIndex + currentIndex;
             HistoricalIndices.push(IndexInfo(block.timestamp, currentIndex));
             averageIndex = computeAverageIndex();
