@@ -100,7 +100,7 @@ contract plvGLPOracle is Ownable {
         return true;
     }
 
-    function getIndex() public onlyOwner {
+    function updateIndex() public onlyOwner {
         uint256 currentIndex = getPlutusExchangeRate();
         bool indexCheck = checkSwing(currentIndex);
         if (indexCheck && currentIndex - lastIndex > updateThreshold) {
