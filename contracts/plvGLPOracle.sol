@@ -108,10 +108,10 @@ contract plvGLPOracle is Ownable {
 
     /**
         @notice Update the current, cumulative and average indices when required conditions are met
+        If the price fails to update, the posted price will fall back on the last previously 
+        accepted average index.
         @dev we only ever update the index if requested update is within +/- 1% of previously accepted
         index and update threshold has been reached. Revert otherwise.
-        @notice If the price fails to update, the posted price will fall back on the last previously 
-        accepted average index.
      */
     function updateIndex() public onlyOwner {
         uint256 currentIndex = getPlutusExchangeRate();
