@@ -172,7 +172,8 @@ contract plvGLPOracle is Ownable {
     event windowSizeUpdated(uint256 oldWindowSize, uint256 newWindowSize);
 
     /**
-        @notice Admin function to update the address of GLP, restricted to only be usable by the contract owner.
+        @notice Admin function to update the address of GLP, restricted to only be 
+        usable by the contract owner.
      */
     function _updateGlpAddress(address _newGlpAddress) external onlyOwner {
         address oldGLPAddress = GLP;
@@ -191,8 +192,8 @@ contract plvGLPOracle is Ownable {
     }
 
     /**
-        @notice Admin function to update the address of plvGLP, restricted to only be usable by the 
-        contract owner.
+        @notice Admin function to update the address of plvGLP, restricted to only be 
+        usable by the contract owner.
      */
     function _updatePlvGlpAddress(address _newPlvGlpAddress) external onlyOwner {
         address oldPlvGLPAddress = plvGLP;
@@ -201,8 +202,8 @@ contract plvGLPOracle is Ownable {
     }
 
     /**
-        @notice Admin function to update the moving average window size, restricted to only be usable 
-        by the contract owner.
+        @notice Admin function to update the moving average window size, restricted to only be 
+        usable by the contract owner.
      */
     function _updateWindowSize(uint256 _newWindowSize) external onlyOwner {
         address oldWindowSize = windowSize;
