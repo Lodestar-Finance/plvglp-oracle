@@ -4,7 +4,9 @@ import "./Interfaces/ERC20Interface.sol";
 import "./Interfaces/GLPManagerInterface.sol";
 import "./Interfaces/plvGLPInterface.sol";
 
-contract GLPOracle {
+//TODO: documentation
+
+contract plvGLPOracleSimple {
     address public admin;
 
     address public GLP;
@@ -25,12 +27,7 @@ contract GLPOracle {
 
     event newPlvGLPAddress(address newPlvGLPAddress);
 
-    constructor(
-        address admin_,
-        address GLPAddress_,
-        address GLPManagerAddress_,
-        address plvGLPAddress_
-    ) {
+    constructor(address admin_, address GLPAddress_, address GLPManagerAddress_, address plvGLPAddress_) {
         admin = admin_;
         GLP = GLPAddress_;
         GLPManager = GLPManagerAddress_;
@@ -74,44 +71,28 @@ contract GLPOracle {
     }
 
     function updateAdmin(address _newAdmin) public returns (address) {
-        require(
-            msg.sender == admin,
-            "Only the current admin is authorized to change the admin"
-        );
+        require(msg.sender == admin, "Only the current admin is authorized to change the admin");
         admin = _newAdmin;
         emit newAdmin(_newAdmin);
         return _newAdmin;
     }
 
     function updateGlpAddress(address _newGlpAddress) public returns (address) {
-        require(
-            msg.sender == admin,
-            "Only the admin can change the GLP contract address"
-        );
+        require(msg.sender == admin, "Only the admin can change the GLP contract address");
         GLP = _newGlpAddress;
         emit newGLPAddress(_newGlpAddress);
         return _newGlpAddress;
     }
 
-    function updateGlpManagerAddress(
-        address _newGlpManagerAddress
-    ) public returns (address) {
-        require(
-            msg.sender == admin,
-            "Only the admin can change the GLP Manager contract address"
-        );
+    function updateGlpManagerAddress(address _newGlpManagerAddress) public returns (address) {
+        require(msg.sender == admin, "Only the admin can change the GLP Manager contract address");
         GLPManager = _newGlpManagerAddress;
         emit newGLPManagerAddress(_newGlpManagerAddress);
         return _newGlpManagerAddress;
     }
 
-    function updatePlvGlpAddress(
-        address _newPlvGlpAddress
-    ) public returns (address) {
-        require(
-            msg.sender == admin,
-            "Only the admin can change the plvGLP contract address"
-        );
+    function updatePlvGlpAddress(address _newPlvGlpAddress) public returns (address) {
+        require(msg.sender == admin, "Only the admin can change the plvGLP contract address");
         plvGLP = _newPlvGlpAddress;
         emit newPlvGLPAddress(_newPlvGlpAddress);
         return _newPlvGlpAddress;
