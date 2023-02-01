@@ -132,7 +132,7 @@ contract plvGLPOracle is Ownable {
     /**
         @notice Update the current, cumulative and average indices when required conditions are met.
         If the price fails to update, the posted price will fall back on the last previously 
-        accepted average index.
+        accepted average index. Access is restricted to only whitelisted addresses.
         @dev we only ever update the index if requested update is within +/- 1% of previously accepted
         index and update threshold has been reached.
      */
