@@ -1,7 +1,7 @@
 //SPDX-License-Identifier: BSD-3-Clause
 pragma solidity 0.8.17;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "../node_modules/@openzeppelin/contracts/access/Ownable.sol";
 import "./Interfaces/GLPManagerInterface.sol";
 import "./Interfaces/plvGLPInterface.sol";
 import "./Interfaces/ERC20Interface.sol";
@@ -15,13 +15,14 @@ import "./Interfaces/ERC20Interface.sol";
     @notice This contract uses a simple cumulative TWAP function. It is more resistant to manipulation
     but reported prices are less fresh over time.
 */
-contract plvGLPOracle is Ownable {
-    uint256 public averageIndex;
-    uint256 public windowSize;
+contract plvGLPOracleFixed is Ownable {
+    uint256 averageIndex;
+    uint256 cumulativeIndex;
+    uint256 updateThreshold;
 
-    address public GLP;
-    address public GLPManager;
-    address public plvGLP;
+    address GLP;
+    address GLPManager;
+    address plvGLP;
 
     uint256 private constant BASE = 1e18;
     uint256 private constant DECIMAL_DIFFERENCE = 1e6;
@@ -41,22 +42,21 @@ contract plvGLPOracle is Ownable {
         uint256 timestamp
     );
 
-    event updatePosted(uint256 averageIndex, uint256 timestamp);
-
     constructor(
+        uint256 _updateThreshold,
         address _GLP,
         address _GLPManager,
-        address _plvGLP,
-        uint256 _windowSize
+        address _plvGLP
     ) {
+        updateThreshold = _updateThreshold;
         GLP = _GLP;
         GLPManager = _GLPManager;
         plvGLP = _plvGLP;
-        windowSize = _windowSize;
         uint256 index = getPlutusExchangeRate();
         require(index > 0, "First index cannot be zero.");
         //initialize indices, this push will be stored in position 0
         HistoricalIndices.push(IndexInfo(block.timestamp, index));
+        cumulativeIndex = index;
     }
 
     function getGLPPrice() public view returns (uint256) {
@@ -79,33 +79,21 @@ contract plvGLPOracle is Ownable {
         return exchangeRate;
     }
 
-    function computeAverageIndex() public returns (uint256) {
-        uint256 latestIndexing = HistoricalIndices.length - 1;
-        uint256 sum;
-        if (latestIndexing <= windowSize) {
-            for (uint256 i = 0; i < latestIndexing; i++) {
-                sum += HistoricalIndices[i].recordedIndex;
-            }
-            averageIndex = sum / HistoricalIndices.length;
-            return averageIndex;
-        } else {
-            uint256 firstIndex = latestIndexing - windowSize + 1;
-            for (uint256 i = firstIndex; i <= latestIndexing; i++) {
-                sum += HistoricalIndices[i].recordedIndex;
-            }
-            averageIndex = sum / windowSize;
-            return averageIndex;
-        }
+    function computeAverageIndex() internal returns (uint256) {
+        //we want to include the first (zeroth) index in these calculations, so we don't subtract 1 from array length
+        uint256 latestIndexing = HistoricalIndices.length;
+        averageIndex = uint256((cumulativeIndex) / latestIndexing);
+        return averageIndex;
     }
 
-    function getPreviousIndex() public view returns (uint256) {
+    function getPreviousIndex() internal view returns (uint256) {
         uint256 previousIndexing = HistoricalIndices.length - 1;
         uint256 previousIndex = HistoricalIndices[previousIndexing]
             .recordedIndex;
         return previousIndex;
     }
 
-    function checkSwing(uint256 currentIndex) public returns (bool) {
+    function checkSwing(uint256 currentIndex) internal returns (bool) {
         uint256 previousIndex = getPreviousIndex();
         uint256 allowableSwing = (previousIndex * MAX_SWING) / BASE;
         uint256 minSwing = previousIndex - allowableSwing;
@@ -129,14 +117,13 @@ contract plvGLPOracle is Ownable {
         uint256 previousIndex = getPreviousIndex();
         bool indexCheck = checkSwing(currentIndex);
         if (!indexCheck) {
-            currentIndex = previousIndex;
+            revert("requested update is out of bounds");
+        } else if (
+            indexCheck && currentIndex - previousIndex > updateThreshold
+        ) {
+            cumulativeIndex = cumulativeIndex + currentIndex;
             HistoricalIndices.push(IndexInfo(block.timestamp, currentIndex));
             averageIndex = computeAverageIndex();
-            emit updatePosted(averageIndex, block.timestamp);
-        } else {
-            HistoricalIndices.push(IndexInfo(block.timestamp, currentIndex));
-            averageIndex = computeAverageIndex();
-            emit updatePosted(averageIndex, block.timestamp);
         }
     }
 

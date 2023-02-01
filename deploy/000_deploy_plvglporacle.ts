@@ -5,20 +5,23 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const {deployments, getNamedAccounts} = hre;
   const {deploy, get, save} = deployments;
 
-  const {deployer} = await getNamedAccounts();
+  const {deployer, glpAddress, glpManagerAddress, plvglp} = await getNamedAccounts();
 
-  const arg = 1774708836;
+  const windowSize = 6;
 
 
-  const lode = await deploy('Lock', {
+  const lode = await deploy('plvGLPOracle', {
     from: deployer,
-    contract: 'Lock',
+    contract: 'plvGLPOracle',
     args: [
-      arg
+      glpAddress,
+      glpManagerAddress,
+      plvglp,
+      windowSize
     ],
     log: true
   });
 
 };
 export default func;
-func.tags = ['Lock'];
+func.tags = ['plvGLPOracle'];
