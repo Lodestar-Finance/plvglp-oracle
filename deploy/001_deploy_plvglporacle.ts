@@ -7,6 +7,8 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
   const {deployer, glpAddress, glpManagerAddress, plvglp} = await getNamedAccounts();
 
+  const whitelist = (await get('Whitelist')).address.toString();
+
   const windowSize = 6;
 
 
@@ -17,6 +19,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
       glpAddress,
       glpManagerAddress,
       plvglp,
+      whitelist,
       windowSize
     ],
     log: true
