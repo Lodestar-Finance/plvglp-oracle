@@ -9,7 +9,7 @@ import "./Whitelist.sol";
 //TODO: optimize integer sizes for gas efficiency?
 
 /** @title Oracle for Plutus Vault GLP employing moving average calculations for pricing
-    @author Lodestar Finance & Plutus DAO
+    @author Lodestar Finance
     @notice This contract uses a moving average calculation to report a plvGLP/GLP exchange
     rate. The "window size" is adjustable to allow for flexibility in calculation parameters. The price
     returned from the getPlvGLPPrice function is denominated in USD wei.
