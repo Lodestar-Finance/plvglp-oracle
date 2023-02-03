@@ -134,7 +134,7 @@ contract plvGLPOracle is Ownable {
         If the price fails to update, the posted price will fall back on the last previously 
         accepted average index. Access is restricted to only whitelisted addresses.
         @dev we only ever update the index if requested update is within +/- 1% of previously accepted
-        index and update threshold has been reached.
+        index.
      */
     function updateIndex() external {
         require(Whitelist(whitelist).isWhitelisted(msg.sender), "NOT_AUTHORIZED");
