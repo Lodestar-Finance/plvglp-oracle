@@ -1,6 +1,6 @@
 # plvGLP Oracle
 
-This repository contains the contracts and associated tooling to test and deploy oracle contracts to report the price of plvGLP. The development of these contracts was a collaborative effort between the Lodestar Finance and Plutus DAO teams. This repository relies heavily on hardhat and hardhat-deploy. If you are unfamiliar with the usage of these packages, please refer to the following:
+This repository contains the contracts and associated tooling to test and deploy oracle contracts to report the price of plvGLP. This repository relies heavily on hardhat and hardhat-deploy. If you are unfamiliar with the usage of these packages, please refer to the following:
 
 Hardhat: https://hardhat.org/docs
 
