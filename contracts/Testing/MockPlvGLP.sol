@@ -5,21 +5,19 @@
 pragma solidity ^0.8.17;
 
 contract MockPlvGLP {
-    address plvGLP;
+    uint256 _totalAssets = 4385690448959168297133346;
 
-    constructor(address _plvGLP) {
-        plvGLP = _plvGLP;
+    function totalAssets() public view returns (uint256) {
+        return _totalAssets;
     }
 
-    function getTotalAssets() public pure returns (uint256) {
-        uint256 totalAssets;
-        totalAssets = 4385690448959168297133346;
-        return totalAssets;
-    }
-
-    function getTotalSupply() public pure returns (uint256) {
+    function totalSupply() public pure returns (uint256) {
         uint256 totalSupply;
         totalSupply = 4335445707657153052302414;
         return totalSupply;
+    }
+
+    function changeTotalAssets(uint256 newTotalAssets) external {
+        _totalAssets = newTotalAssets;
     }
 }

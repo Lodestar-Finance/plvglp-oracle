@@ -14,7 +14,7 @@ import "./Whitelist.sol";
     rate. The "window size" is adjustable to allow for flexibility in calculation parameters. The price
     returned from the getPlvGLPPrice function is denominated in USD wei.
 */
-contract plvGLPOracle is Ownable {
+contract PlvGLPOracle is Ownable {
     uint256 public averageIndex;
     uint256 public windowSize;
 
