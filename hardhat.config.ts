@@ -6,7 +6,7 @@ import "hardhat-gas-reporter";
 
 
 const config: HardhatUserConfig = {
-  defaultNetwork: 'arbitrum',
+  defaultNetwork: 'hardhat',
   solidity: {
     version: "0.8.17",
     settings: {

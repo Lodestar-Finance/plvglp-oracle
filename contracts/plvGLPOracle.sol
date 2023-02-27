@@ -22,10 +22,11 @@ contract PlvGLPOracle is Ownable {
     address public GLPManager;
     address public plvGLP;
     address public whitelist;
+    uint256 public MAX_SWING;
 
     uint256 private constant BASE = 1e18;
     uint256 private constant DECIMAL_DIFFERENCE = 1e6;
-    uint256 private constant MAX_SWING = 10000000000000000; //1%
+    //1%
     bool public constant isGLPOracle = true;
 
     struct IndexInfo {
@@ -44,6 +45,7 @@ contract PlvGLPOracle is Ownable {
         plvGLP = _plvGLP;
         whitelist = _whitelist;
         windowSize = _windowSize;
+        MAX_SWING = 1000000000000000; //1%
         uint256 index = getPlutusExchangeRate();
         require(index > 0, "First index cannot be zero.");
         //initialize indices, this push will be stored in position 0
@@ -169,7 +171,8 @@ contract PlvGLPOracle is Ownable {
     event newGLPAddress(address oldGLPAddress, address newGLPAddress);
     event newGLPManagerAddress(address oldManagerAddress, address newManagerAddress);
     event newPlvGLPAddress(address oldPlvGLPAddress, address newPlvGLPAddress);
-    event windowSizeUpdated(uint256 oldWindowSize, uint256 newWindowSize);
+    event newWindowSize(uint256 oldWindowSize, uint256 newWindowSize);
+    event newMaxSwing(uint256 oldMaxSwing, uint256 newMaxSwing);
 
     /**
         @notice Admin function to update the address of GLP, restricted to only be 
@@ -208,6 +211,12 @@ contract PlvGLPOracle is Ownable {
     function _updateWindowSize(uint256 _newWindowSize) external onlyOwner {
         uint256 oldWindowSize = windowSize;
         windowSize = _newWindowSize;
-        emit windowSizeUpdated(oldWindowSize, windowSize);
+        emit newWindowSize(oldWindowSize, windowSize);
+    }
+
+    function _updateMaxSwing(uint256 _newMaxSwing) external onlyOwner {
+        uint256 oldMaxSwing = MAX_SWING;
+        MAX_SWING = _newMaxSwing;
+        emit newWindowSize(oldMaxSwing, MAX_SWING);
     }
 }
