@@ -14,7 +14,7 @@ import "./Whitelist.sol";
     rate. The "window size" is adjustable to allow for flexibility in calculation parameters. The price
     returned from the getPlvGLPPrice function is denominated in USD wei.
 */
-contract plvGLPOracle is Ownable {
+contract PlvGLPOracle is Ownable {
     uint256 public averageIndex;
     uint256 public windowSize;
 
@@ -22,10 +22,11 @@ contract plvGLPOracle is Ownable {
     address public GLPManager;
     address public plvGLP;
     address public whitelist;
+    uint256 public MAX_SWING;
 
     uint256 private constant BASE = 1e18;
     uint256 private constant DECIMAL_DIFFERENCE = 1e6;
-    uint256 private constant MAX_SWING = 10000000000000000; //1%
+    //1%
     bool public constant isGLPOracle = true;
 
     struct IndexInfo {
@@ -44,6 +45,7 @@ contract plvGLPOracle is Ownable {
         plvGLP = _plvGLP;
         whitelist = _whitelist;
         windowSize = _windowSize;
+        MAX_SWING = 1000000000000000; //1%
         uint256 index = getPlutusExchangeRate();
         require(index > 0, "First index cannot be zero.");
         //initialize indices, this push will be stored in position 0
@@ -134,7 +136,7 @@ contract plvGLPOracle is Ownable {
         If the price fails to update, the posted price will fall back on the last previously 
         accepted average index. Access is restricted to only whitelisted addresses.
         @dev we only ever update the index if requested update is within +/- 1% of previously accepted
-        index and update threshold has been reached.
+        index.
      */
     function updateIndex() external {
         require(Whitelist(whitelist).isWhitelisted(msg.sender), "NOT_AUTHORIZED");
@@ -169,7 +171,8 @@ contract plvGLPOracle is Ownable {
     event newGLPAddress(address oldGLPAddress, address newGLPAddress);
     event newGLPManagerAddress(address oldManagerAddress, address newManagerAddress);
     event newPlvGLPAddress(address oldPlvGLPAddress, address newPlvGLPAddress);
-    event windowSizeUpdated(uint256 oldWindowSize, uint256 newWindowSize);
+    event newWindowSize(uint256 oldWindowSize, uint256 newWindowSize);
+    event newMaxSwing(uint256 oldMaxSwing, uint256 newMaxSwing);
 
     /**
         @notice Admin function to update the address of GLP, restricted to only be 
@@ -208,6 +211,12 @@ contract plvGLPOracle is Ownable {
     function _updateWindowSize(uint256 _newWindowSize) external onlyOwner {
         uint256 oldWindowSize = windowSize;
         windowSize = _newWindowSize;
-        emit windowSizeUpdated(oldWindowSize, windowSize);
+        emit newWindowSize(oldWindowSize, windowSize);
+    }
+
+    function _updateMaxSwing(uint256 _newMaxSwing) external onlyOwner {
+        uint256 oldMaxSwing = MAX_SWING;
+        MAX_SWING = _newMaxSwing;
+        emit newWindowSize(oldMaxSwing, MAX_SWING);
     }
 }

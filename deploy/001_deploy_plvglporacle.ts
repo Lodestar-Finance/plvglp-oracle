@@ -12,9 +12,9 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const windowSize = 6;
 
 
-  const lode = await deploy('plvGLPOracle', {
+  const lode = await deploy('PlvGLPOracle', {
     from: deployer,
-    contract: 'plvGLPOracle',
+    contract: 'PlvGLPOracle',
     args: [
       glpAddress,
       glpManagerAddress,
@@ -28,4 +28,4 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 };
 export default func;
 func.dependencies = ['Whitelist'];
-func.tags = ['plvGLPOracle'];
+func.tags = ['PlvGLPOracle'];

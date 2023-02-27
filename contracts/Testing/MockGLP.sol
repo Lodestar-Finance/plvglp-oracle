@@ -6,17 +6,6 @@
 pragma solidity ^0.8.17;
 
 contract MockGLP {
-    address public GLP;
-
-    address public GLPManager;
-
-    //address public admin = msg.sender;
-
-    constructor(address _GLP, address _GLPManager) {
-        GLP = _GLP;
-        GLPManager = _GLPManager;
-    }
-
     function getAum(bool maximise) public pure returns (uint256) {
         uint256 aum;
 
@@ -28,19 +17,9 @@ contract MockGLP {
         return aum;
     }
 
-    function getTotalSupply() public pure returns (uint256) {
+    function totalSupply() public pure returns (uint256) {
         uint256 totalSupply;
         totalSupply = 320524293832658104459556845;
         return totalSupply;
-    }
-
-    function setGLPAddress(address _GLP) public returns (address) {
-        GLP = _GLP;
-        return GLP;
-    }
-
-    function setGLPManager(address _GLPManager) public returns (address) {
-        GLPManager = _GLPManager;
-        return GLPManager;
     }
 }

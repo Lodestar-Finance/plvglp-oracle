@@ -3,122 +3,185 @@ import { anyValue } from "@nomicfoundation/hardhat-chai-matchers/withArgs";
 import { expect } from "chai";
 import { ethers } from "hardhat";
 
-describe("Lock", function () {
+const BASE = ethers.BigNumber.from('1000000000000000000');
+const correctIndex = "1011589290857287007";
+const badIndex = "101158929085728700764";
+const badValue = '438569044895916829713334600'
+const dummyAddress = "0x67E57A0ec37768eaF99a364975ec4E1f98920D01";
+const windowSize = 6;
+
+//plvGLP Oracle Testing Suite
+//What needs to be tested?
+
+//moving average calculation (done)
+//update index can only be called by whitelist addresses (done)
+//swingchecker function (done)
+//index when swingchecker fails is equal to previous index (done)
+//verify proper decimal places of reported price
+//verify previousIndex
+//owner functions (done)
+
+
+describe("PlvGLPOracle", function () {
   // We define a fixture to reuse the same setup in every test.
   // We use loadFixture to run this setup once, snapshot that state,
   // and reset Hardhat Network to that snapshot in every test.
-  async function deployOneYearLockFixture() {
-    const ONE_YEAR_IN_SECS = 365 * 24 * 60 * 60;
-    const ONE_GWEI = 1_000_000_000;
+  async function deployStandardOracleFixture() {
 
-    const lockedAmount = ONE_GWEI;
-    const unlockTime = (await time.latest()) + ONE_YEAR_IN_SECS;
+    const windowSize = 6;
 
     // Contracts are deployed using the first signer/account by default
     const [owner, otherAccount] = await ethers.getSigners();
+    const ownerAddress = owner.address;
 
-    const Lock = await ethers.getContractFactory("Lock");
-    const lock = await Lock.deploy(unlockTime, { value: lockedAmount });
+    const mockGLP = await ethers.getContractFactory("MockGLP");
+    const MockGLP = await mockGLP.deploy();
+    const MockGLPAddress = MockGLP.address.toString();
 
-    return { lock, unlockTime, lockedAmount, owner, otherAccount };
-  }
+    const mockPlvGLP = await ethers.getContractFactory("MockPlvGLP");
+    const MockPlvGLP = await mockPlvGLP.deploy();
+    const MockPlvGLPAddress = MockPlvGLP.address.toString();
+
+    const whitelist = await ethers.getContractFactory("Whitelist");
+    const Whitelist = await whitelist.deploy();
+    const WhitelistAddress = Whitelist.address.toString();
+
+    await Whitelist.updateWhitelist(ownerAddress, true);
+
+    const plvGLPOracle = await ethers.getContractFactory("PlvGLPOracle");
+    const PlvGLPOracle = await plvGLPOracle.deploy(MockGLPAddress, MockGLPAddress, MockPlvGLPAddress, WhitelistAddress, windowSize);
+
+    const initializationPeriod = windowSize * 3;
+
+    for (var i = 0; i < initializationPeriod; i++) {
+      await PlvGLPOracle.updateIndex();
+    }
+
+    return { PlvGLPOracle, MockPlvGLP, owner, otherAccount };
+  };
 
   describe("Deployment", function () {
-    it("Should set the right unlockTime", async function () {
-      const { lock, unlockTime } = await loadFixture(deployOneYearLockFixture);
+    it("Should set the contract owner correctly", async function () {
+      const { PlvGLPOracle, owner } = await loadFixture(deployStandardOracleFixture);
+      const ownerAddress = owner.address;
 
-      expect(await lock.unlockTime()).to.equal(unlockTime);
+      expect(await PlvGLPOracle.owner()).to.equal(ownerAddress);
     });
 
-    it("Should set the right owner", async function () {
-      const { lock, owner } = await loadFixture(deployOneYearLockFixture);
+    it("The first index cannot be zero", async function () {
+      const { PlvGLPOracle } = await loadFixture(deployStandardOracleFixture);
 
-      expect(await lock.owner()).to.equal(owner.address);
-    });
-
-    it("Should receive and store the funds to lock", async function () {
-      const { lock, lockedAmount } = await loadFixture(
-        deployOneYearLockFixture
-      );
-
-      expect(await ethers.provider.getBalance(lock.address)).to.equal(
-        lockedAmount
-      );
-    });
-
-    it("Should fail if the unlockTime is not in the future", async function () {
-      // We don't use the fixture here because we want a different deployment
-      const latestTime = await time.latest();
-      const Lock = await ethers.getContractFactory("Lock");
-      await expect(Lock.deploy(latestTime, { value: 1 })).to.be.revertedWith(
-        "Unlock time should be in the future"
-      );
+      expect(await PlvGLPOracle.HistoricalIndices(0)).to.not.equal(0);
     });
   });
 
-  describe("Withdrawals", function () {
-    describe("Validations", function () {
-      it("Should revert with the right error if called too soon", async function () {
-        const { lock } = await loadFixture(deployOneYearLockFixture);
-
-        await expect(lock.withdraw()).to.be.revertedWith(
-          "You can't withdraw yet"
-        );
-      });
-
-      it("Should revert with the right error if called from another account", async function () {
-        const { lock, unlockTime, otherAccount } = await loadFixture(
-          deployOneYearLockFixture
-        );
-
-        // We can increase the time in Hardhat Network
-        await time.increaseTo(unlockTime);
-
-        // We use lock.connect() to send a transaction from another account
-        await expect(lock.connect(otherAccount).withdraw()).to.be.revertedWith(
-          "You aren't the owner"
-        );
-      });
-
-      it("Shouldn't fail if the unlockTime has arrived and the owner calls it", async function () {
-        const { lock, unlockTime } = await loadFixture(
-          deployOneYearLockFixture
-        );
-
-        // Transactions are sent using the first signer by default
-        await time.increaseTo(unlockTime);
-
-        await expect(lock.withdraw()).not.to.be.reverted;
-      });
+  describe("Moving Average & Price Calculations", function () {
+    it("Should return the correct value for the moving average", async function () {
+      const { PlvGLPOracle} = await loadFixture(deployStandardOracleFixture);
+      const averageIndex = await PlvGLPOracle.averageIndex();
+      const trueIndex = ethers.BigNumber.from('1011589290857287007');
+      
+      expect(averageIndex).to.equal(trueIndex);
     });
+    it("Should return the correct value for plvGLP Price", async function () {
+      const { PlvGLPOracle} = await loadFixture(deployStandardOracleFixture);
+      const averageIndex = await PlvGLPOracle.averageIndex();
+      const glpPrice = await PlvGLPOracle.getGLPPrice();
+      const priceCalculated = averageIndex.mul(glpPrice).div(BASE);
+      
+      expect(await PlvGLPOracle.getPlvGLPPrice()).to.equal(priceCalculated);
+    }); 
+  });
 
-    describe("Events", function () {
-      it("Should emit an event on withdrawals", async function () {
-        const { lock, unlockTime, lockedAmount } = await loadFixture(
-          deployOneYearLockFixture
-        );
-
-        await time.increaseTo(unlockTime);
-
-        await expect(lock.withdraw())
-          .to.emit(lock, "Withdrawal")
-          .withArgs(lockedAmount, anyValue); // We accept any value as `when` arg
-      });
+  describe("Index Updating", function () {
+    it("Whitelisted addresses are able to update the index", async function () {
+      const { PlvGLPOracle} = await loadFixture(deployStandardOracleFixture);
+      await expect(await PlvGLPOracle.updateIndex()).not.to.be.reverted;
     });
-
-    describe("Transfers", function () {
-      it("Should transfer the funds to the owner", async function () {
-        const { lock, unlockTime, lockedAmount, owner } = await loadFixture(
-          deployOneYearLockFixture
-        );
-
-        await time.increaseTo(unlockTime);
-
-        await expect(lock.withdraw()).to.changeEtherBalances(
-          [owner, lock],
-          [lockedAmount, -lockedAmount]
-        );
-      });
+    it("Non-Whitelisted addresses are not allowed to update the index.", async function () {
+      const { PlvGLPOracle, otherAccount} = await loadFixture(deployStandardOracleFixture);
+      await expect(PlvGLPOracle.connect(otherAccount).updateIndex()).to.be.revertedWith('NOT_AUTHORIZED');
+    });
+    it("Should emit the updatePosted event when a new index is posted", async function () {
+      const {PlvGLPOracle} = await loadFixture(deployStandardOracleFixture);
+      await expect(await PlvGLPOracle.updateIndex()).to.emit(PlvGLPOracle, "updatePosted").withArgs(correctIndex, anyValue);
     });
   });
+
+  describe("Swing Checker", function () {
+    it("Should fall back on previous index when a bad index is requested to be posted", async function () {
+      const { PlvGLPOracle, MockPlvGLP} = await loadFixture(deployStandardOracleFixture);
+      const previousIndex = await PlvGLPOracle.getPreviousIndex();
+      await MockPlvGLP.changeTotalAssets(badValue);
+      await PlvGLPOracle.updateIndex();
+      const newIndex = await PlvGLPOracle.getPreviousIndex();
+      expect(newIndex).to.equal(previousIndex);
+    });
+    it("CheckSwing returns false for bad index", async function () {
+      const {PlvGLPOracle} = await loadFixture(deployStandardOracleFixture);
+      const bool = await PlvGLPOracle.callStatic.checkSwing(badValue);
+      expect(bool).to.be.false;
+    });
+    it("Should emit the IndexAlert event when a bad index is attempted to be posted", async function () {
+      const {PlvGLPOracle, MockPlvGLP} = await loadFixture(deployStandardOracleFixture);
+      const previousIndex = await PlvGLPOracle.getPreviousIndex();
+      await MockPlvGLP.changeTotalAssets(badValue);
+      await expect(await PlvGLPOracle.updateIndex()).to.emit(PlvGLPOracle, "IndexAlert").withArgs(previousIndex, badIndex, anyValue);
+    });
+  });
+
+  describe("Admin Functions", function () {
+    it("The owner may update the GLP Address", async function () {
+      const {PlvGLPOracle} = await loadFixture(deployStandardOracleFixture);
+      await expect(await PlvGLPOracle._updateGlpAddress(dummyAddress)).to.not.be.reverted;
+    });
+    it("Non-owners may not update the GLP Address", async function () {
+      const {PlvGLPOracle, otherAccount} = await loadFixture(deployStandardOracleFixture);
+      await expect(PlvGLPOracle.connect(otherAccount)._updateGlpAddress(dummyAddress)).to.be.revertedWith('Ownable: caller is not the owner');
+    });
+    it("Should emit newGlpAddress event when GLP address is updated", async function () {
+      const {PlvGLPOracle} = await loadFixture(deployStandardOracleFixture);
+      const glpAddress = await PlvGLPOracle.GLP();
+      await expect(await PlvGLPOracle._updateGlpAddress(dummyAddress)).to.emit(PlvGLPOracle, "newGLPAddress").withArgs(glpAddress, dummyAddress);
+    });
+    it("The owner may update the GLP Manager Address", async function () {
+      const {PlvGLPOracle} = await loadFixture(deployStandardOracleFixture);
+      await expect(await PlvGLPOracle._updateGlpManagerAddress(dummyAddress)).to.not.be.reverted;
+    });
+    it("Non-owners may not update the GLP Manager Address", async function () {
+      const {PlvGLPOracle, otherAccount} = await loadFixture(deployStandardOracleFixture);
+      await expect(PlvGLPOracle.connect(otherAccount)._updateGlpManagerAddress(dummyAddress)).to.be.revertedWith('Ownable: caller is not the owner');
+    });
+    it("Should emit newGlpManagerAddress event when GLP Manager address is updated", async function () {
+      const {PlvGLPOracle} = await loadFixture(deployStandardOracleFixture);
+      const glpManagerAddress = await PlvGLPOracle.GLPManager();
+      await expect(await PlvGLPOracle._updateGlpManagerAddress(dummyAddress)).to.emit(PlvGLPOracle, "newGLPManagerAddress").withArgs(glpManagerAddress, dummyAddress);
+    });
+    it("The owner may update the plvGLP Address", async function () {
+      const {PlvGLPOracle} = await loadFixture(deployStandardOracleFixture);
+      await expect(await PlvGLPOracle._updatePlvGlpAddress(dummyAddress)).to.not.be.reverted;
+    });
+    it("Non-owners may not update the plvGLP Address", async function () {
+      const {PlvGLPOracle, otherAccount} = await loadFixture(deployStandardOracleFixture);
+      await expect(PlvGLPOracle.connect(otherAccount)._updatePlvGlpAddress(dummyAddress)).to.be.revertedWith('Ownable: caller is not the owner');
+    });
+    it("Should emit newPlvGLPAddress event when plvGLP address is updated", async function () {
+      const {PlvGLPOracle} = await loadFixture(deployStandardOracleFixture);
+      const plvGLP = await PlvGLPOracle.plvGLP();
+      await expect(await PlvGLPOracle._updatePlvGlpAddress(dummyAddress)).to.emit(PlvGLPOracle, "newPlvGLPAddress").withArgs(plvGLP, dummyAddress);
+    });
+    it("The owner may update the window size", async function () {
+      const {PlvGLPOracle} = await loadFixture(deployStandardOracleFixture);
+      await expect(await PlvGLPOracle._updateWindowSize(windowSize)).to.not.be.reverted;
+    });
+    it("Non-owners may not update the window size", async function () {
+      const {PlvGLPOracle, otherAccount} = await loadFixture(deployStandardOracleFixture);
+      await expect(PlvGLPOracle.connect(otherAccount)._updateWindowSize(windowSize)).to.be.revertedWith('Ownable: caller is not the owner');
+    });
+    it("Should emit newWindowSize event when the window size is updated", async function () {
+      const {PlvGLPOracle} = await loadFixture(deployStandardOracleFixture);
+      const windowSize = await PlvGLPOracle.windowSize();
+      await expect(await PlvGLPOracle._updateWindowSize(dummyAddress)).to.emit(PlvGLPOracle, "newWindowSize").withArgs(windowSize, dummyAddress);
+    });
+  })
 });
