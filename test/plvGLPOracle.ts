@@ -128,6 +128,15 @@ describe("PlvGLPOracle", function () {
       await MockPlvGLP.changeTotalAssets(badValue);
       await expect(await PlvGLPOracle.updateIndex()).to.emit(PlvGLPOracle, "IndexAlert").withArgs(previousIndex, badIndex, anyValue);
     });
+    it("Wrong minimum swing value", async function () {
+      const {PlvGLPOracle, MockPlvGLP} = await loadFixture(deployStandardOracleFixture);
+      var actualSwing = BigInt(await PlvGLPOracle.MAX_SWING());
+      //max swing should be of 1%, so it should be 1% of BASE, however, if we multiply by 1000...
+      actualSwing = actualSwing * 1000n;
+      expect(actualSwing).to.equal(BigInt(1e18));
+      //we'll see the test passes, which means it's actually a 0.1% swing
+      //the correct value would be 1e16 for 1%, but its set as 1e15 instead
+    });
   });
 
   describe("Admin Functions", function () {
