@@ -45,7 +45,7 @@ contract PlvGLPOracle is Ownable {
         plvGLP = _plvGLP;
         whitelist = _whitelist;
         windowSize = _windowSize;
-        MAX_SWING = 1000000000000000; //1%
+        MAX_SWING = 10000000000000000; //1%
         uint256 index = getPlutusExchangeRate();
         require(index > 0, "First index cannot be zero.");
         //initialize indices, this push will be stored in position 0
