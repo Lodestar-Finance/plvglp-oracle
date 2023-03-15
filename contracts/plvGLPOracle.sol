@@ -1,6 +1,6 @@
 //SPDX-License-Identifier: BSD-3-Clause
 pragma solidity 0.8.17;
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/access/Ownable2Step.sol";
 import "./Interfaces/GLPManagerInterface.sol";
 import "./Interfaces/plvGLPInterface.sol";
 import "./Interfaces/ERC20Interface.sol";
@@ -14,7 +14,7 @@ import "./Whitelist.sol";
     rate. The "window size" is adjustable to allow for flexibility in calculation parameters. The price
     returned from the getPlvGLPPrice function is denominated in USD wei.
 */
-contract PlvGLPOracle is Ownable {
+contract PlvGLPOracle is Ownable2Step {
     uint256 public averageIndex;
     uint256 public windowSize;
 
@@ -45,7 +45,7 @@ contract PlvGLPOracle is Ownable {
         plvGLP = _plvGLP;
         whitelist = _whitelist;
         windowSize = _windowSize;
-        MAX_SWING = 10000000000000000; //1%
+        MAX_SWING = 1e16; //1%
         uint256 index = getPlutusExchangeRate();
         require(index > 0, "First index cannot be zero.");
         //initialize indices, this push will be stored in position 0
@@ -62,7 +62,7 @@ contract PlvGLPOracle is Ownable {
         //retrieve the total supply of GLP
         uint256 glpSupply = ERC20Interface(GLP).totalSupply();
         //GLP Price = AUM / Total Supply
-        uint256 price = (glpAUM / glpSupply) * DECIMAL_DIFFERENCE;
+        uint256 price = (glpAUM * DECIMAL_DIFFERENCE) / glpSupply;
         return price;
     }
 
@@ -217,6 +217,6 @@ contract PlvGLPOracle is Ownable {
     function _updateMaxSwing(uint256 _newMaxSwing) external onlyOwner {
         uint256 oldMaxSwing = MAX_SWING;
         MAX_SWING = _newMaxSwing;
-        emit newWindowSize(oldMaxSwing, MAX_SWING);
+        emit newMaxSwing(oldMaxSwing, MAX_SWING);
     }
 }
