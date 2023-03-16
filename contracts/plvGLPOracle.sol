@@ -85,7 +85,7 @@ contract PlvGLPOracle is Ownable2Step {
         the average is computed over the length of the indices array.
         @return Returns the moving average of the index over the specified window.
      */
-    function computeAverageIndex() public returns (uint256) {
+    function computeAverageIndex() internal returns (uint256) {
         uint256 latestIndexing = HistoricalIndices.length - 1;
         uint256 sum;
         if (latestIndexing <= windowSize) {
@@ -119,7 +119,7 @@ contract PlvGLPOracle is Ownable2Step {
         @param currentIndex the currently reported index from Plutus to check swing on
         @return returns TRUE if requested update is within the bounds of maximum swing, returns FALSE otherwise.
      */
-    function checkSwing(uint256 currentIndex) public returns (bool) {
+    function checkSwing(uint256 currentIndex) internal returns (bool) {
         uint256 previousIndex = getPreviousIndex();
         uint256 allowableSwing = (previousIndex * MAX_SWING) / BASE;
         uint256 minSwing = previousIndex - allowableSwing;
