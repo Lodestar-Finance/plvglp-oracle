@@ -1,6 +1,6 @@
 //SPDX-License-Identifier: BSD-3-Clause
 pragma solidity 0.8.17;
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/access/Ownable2Step.sol";
 import "./Interfaces/GLPManagerInterface.sol";
 import "./Interfaces/plvGLPInterface.sol";
 import "./Interfaces/ERC20Interface.sol";
@@ -14,7 +14,7 @@ import "./Whitelist.sol";
     rate. The "window size" is adjustable to allow for flexibility in calculation parameters. The price
     returned from the getPlvGLPPrice function is denominated in USD wei.
 */
-contract PlvGLPOracle is Ownable {
+contract PlvGLPOracle is Ownable2Step {
     uint256 public averageIndex;
     uint256 public windowSize;
 
@@ -45,7 +45,7 @@ contract PlvGLPOracle is Ownable {
         plvGLP = _plvGLP;
         whitelist = _whitelist;
         windowSize = _windowSize;
-        MAX_SWING = 1000000000000000; //1%
+        MAX_SWING = 1e16; //1%
         uint256 index = getPlutusExchangeRate();
         require(index > 0, "First index cannot be zero.");
         //initialize indices, this push will be stored in position 0
@@ -62,7 +62,7 @@ contract PlvGLPOracle is Ownable {
         //retrieve the total supply of GLP
         uint256 glpSupply = ERC20Interface(GLP).totalSupply();
         //GLP Price = AUM / Total Supply
-        uint256 price = (glpAUM / glpSupply) * DECIMAL_DIFFERENCE;
+        uint256 price = (glpAUM * DECIMAL_DIFFERENCE) / glpSupply;
         return price;
     }
 
@@ -85,7 +85,7 @@ contract PlvGLPOracle is Ownable {
         the average is computed over the length of the indices array.
         @return Returns the moving average of the index over the specified window.
      */
-    function computeAverageIndex() public returns (uint256) {
+    function computeAverageIndex() internal returns (uint256) {
         uint256 latestIndexing = HistoricalIndices.length - 1;
         uint256 sum;
         if (latestIndexing <= windowSize) {
@@ -119,7 +119,7 @@ contract PlvGLPOracle is Ownable {
         @param currentIndex the currently reported index from Plutus to check swing on
         @return returns TRUE if requested update is within the bounds of maximum swing, returns FALSE otherwise.
      */
-    function checkSwing(uint256 currentIndex) public returns (bool) {
+    function checkSwing(uint256 currentIndex) internal returns (bool) {
         uint256 previousIndex = getPreviousIndex();
         uint256 allowableSwing = (previousIndex * MAX_SWING) / BASE;
         uint256 minSwing = previousIndex - allowableSwing;
@@ -217,6 +217,6 @@ contract PlvGLPOracle is Ownable {
     function _updateMaxSwing(uint256 _newMaxSwing) external onlyOwner {
         uint256 oldMaxSwing = MAX_SWING;
         MAX_SWING = _newMaxSwing;
-        emit newWindowSize(oldMaxSwing, MAX_SWING);
+        emit newMaxSwing(oldMaxSwing, MAX_SWING);
     }
 }
